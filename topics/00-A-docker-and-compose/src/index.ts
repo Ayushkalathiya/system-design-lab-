@@ -18,11 +18,16 @@ const redis =  new Redis({
 // TODO: ping Redis and return { redis: "connected", pong: true }
 // Hint: redis.ping() returns "PONG" if Redis is reachable
 app.get("/ping", async (req, res) => {
-    const pong = await redis.ping();
-    res.json({ 
-        redis: "connected", 
-        pong: pong === "PONG" 
-    });
+    try {
+        const pong = await redis.ping();
+        if (pong === "PONG") {
+            res.json({ redis: "connected", pong: true });
+        } else {
+            res.status(500).json({ redis: "not connected", pong: false });
+        }
+    }   catch (error) {
+        res.status(503).json({ redis: "not connected", pong: false, error: error });
+    }
 });
 
 // GET /set?key=name&val=ayush
@@ -33,8 +38,12 @@ app.get("/set", async (req, res) => {
     if (!key || !val) {
         return res.status(400).json({ error: "Missing key or val query parameter" });
     }
-    await redis.set(key as string, val as string);
-    res.json({ ok: true });
+    try {
+        await redis.set(key as string, val as string);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error });
+    }
 });
 
 // GET /get?key=name
@@ -45,8 +54,12 @@ app.get("/get", async (req, res) => {
     if (!key) {
         return res.status(400).json({ error: "Missing key query parameter" });
     }
-    const value = await redis.get(key as string);
-    res.json({ key, value });
+    try {
+        const value = await redis.get(key as string);
+        res.json({ key, value });
+    } catch (error) {
+        res.status(500).json({ key, value: null, error: error });
+    }
 });
 
 app.listen(PORT, () => {
