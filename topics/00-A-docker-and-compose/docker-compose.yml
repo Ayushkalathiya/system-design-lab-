@@ -1,0 +1,26 @@
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"       # expose API to your laptop
+    environment:
+      - REDIS_HOST=redis  # service name, not localhost
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"       # expose Redis to your laptop (for debugging)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data  # data survives container restarts
+
+volumes:
+  redis-data:
